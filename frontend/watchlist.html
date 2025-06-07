@@ -1,0 +1,154 @@
+<!-- watchlist.html -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FilmSwipe Watchlist</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lora:wght@400&family=Poppins:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="watchlist.css" />
+  </head>
+
+  <body>
+    <div class="device-frame">
+      <div class="content">
+        <div class="menu-icon" id="menuToggle">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <div class="side-menu" id="sideMenu">
+          <button id="closeMenu" class="close-menu">< Back</button>
+          <button id="mainBtn">🎥 Main</button>
+          <button id="logoutBtn">𝌖 Log Out</button>
+        </div>
+        <div class="logo">
+          <img
+            src="assets/logo.png"
+            alt="App Logo"
+            class="logo-img"
+            draggable="false"
+          />
+        </div>
+        <div class="watchlist-container" id="watchlistContainer">
+        </div>
+      </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const firebaseConfig = {
+          apiKey: "AIzaSyBYF7s7GOFYyG98gdR2Z5rMcj0mWuSRHNU",
+          authDomain: "flimswipe.firebaseapp.com",
+          projectId: "flimswipe",
+          storageBucket: "flimswipe.firebasestorage.app",
+          messagingSenderId: "914929711774",
+          appId: "1:914929711774:web:af744e3f95ef25d00a598f",
+          measurementId: "G-STH87LCT0L",
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        const API_BASE = "http://localhost:3000/api";
+        const container = document.getElementById("watchlistContainer");
+        const menuToggle = document.getElementById("menuToggle");
+        const sideMenu = document.getElementById("sideMenu");
+        const logoutBtn = document.getElementById("logoutBtn");
+        const watchlistBtn = document.getElementById("mainBtn");
+
+        menuToggle.addEventListener("click", () => {
+          sideMenu.classList.toggle("open");
+        });
+
+        auth.onAuthStateChanged(async (user) => {
+          if (!user) {
+            window.location = "/index.html";
+            return;
+          }
+          try {
+            const res = await fetch(
+              `${API_BASE}/watchlist?uid=${encodeURIComponent(user.uid)}`
+            );
+            const list = await res.json();
+            container.innerHTML = "";
+            list.forEach((m) => {
+              const card = document.createElement("div");
+              card.className = "watch-card";
+              card.innerHTML = `
+                            <div class="card-poster">
+                                <img src="${
+                                  m.poster_url || "assets/placeholder.png"
+                                }" alt="${m.title}">
+                            </div>
+                            <div class="card-info">
+                                <h4 class="card-title">${m.title}</h4>
+                                <p class="card-meta">${m.genre} • ${
+                m.rating
+              }</p>
+                            </div>
+                            <div class="card-actions">
+                                <label class="watch-label">
+                                <input type="checkbox" data-id="${m.id}">
+                                </label>
+                                <button class="delete-btn" data-id="${
+                                  m.id
+                                }">🗑️</button>
+                            </div>
+                            `;
+              container.appendChild(card);
+
+              const checkbox = card.querySelector('input[type="checkbox"]');
+              checkbox.checked = Boolean(m.watched);
+            });
+
+            container.addEventListener("change", async (e) => {
+              if (e.target.matches(".watch-label input")) {
+                const movieId = e.target.dataset.id;
+                const watched = e.target.checked;
+                await fetch(`${API_BASE}/watchlist/${movieId}`, {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ uid: user.uid, watched }),
+                });
+              }
+            });
+            container.addEventListener("click", async (e) => {
+              if (e.target.matches(".delete-btn")) {
+                const movieId = e.target.dataset.id;
+                await fetch(
+                  `${API_BASE}/watchlist/${movieId}?uid=${encodeURIComponent(
+                    user.uid
+                  )}`,
+                  { method: "DELETE" }
+                );
+                e.target.closest(".watch-card").remove();
+              }
+            });
+            logoutBtn.onclick = async () => {
+              await auth.signOut();
+              window.location = window.location.origin + "/frontend/index.html";
+            };
+            mainBtn.onclick = () => {
+              window.location = window.location.origin + "/frontend/main.html";
+            };
+
+            document
+              .getElementById("closeMenu")
+              .addEventListener("click", () =>
+                sideMenu.classList.remove("open")
+              );
+          } catch (err) {
+            console.error("Error loading watchlist:", err);
+            container.innerHTML = "<p>Error loading watchlist.</p>";
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

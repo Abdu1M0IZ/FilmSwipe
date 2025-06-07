@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FilmSwipe</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lora:wght@400&family=Poppins:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="main.css" />
+  </head>
+  <body>
+    <div class="device-frame">
+      <div class="content">
+        <div class="menu-icon" id="menuToggle">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+
+        <div class="side-menu" id="sideMenu">
+          <button id="closeMenu" class="close-menu">&lt; Back</button>
+          <button id="watchlistBtn">🎥 Watchlist</button>
+          <button id="logoutBtn">𝌖 Log Out</button>
+        </div>
+
+        <div class="logo">
+          <img
+            src="assets/logo.png"
+            alt="App Logo"
+            class="logo-img"
+            draggable="false"
+          />
+        </div>
+        <div id="card" class="card" draggable="false">
+          <img
+            id="poster"
+            src="assets/placeholder.png"
+            alt="Movie Poster"
+            class="poster"
+          />
+          <div class="info-overlay">
+            <h3 id="title">Movie Title</h3>
+            <p id="desc">Genre • Rating</p>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="dislike" class="action-btn">
+            <img src="assets/cross.svg" alt="Dislike" />
+          </button>
+          <button id="watchlist" class="action-btn">
+            <img src="assets/star.svg" alt="Watchlist" />
+          </button>
+          <button id="like" class="action-btn">
+            <img src="assets/heart.svg" alt="Like" />
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const firebaseConfig = {
+          apiKey: "AIzaSyBYF7s7GOFYyG98gdR2Z5rMcj0mWuSRHNU",
+          authDomain: "flimswipe.firebaseapp.com",
+          projectId: "flimswipe",
+          storageBucket: "flimswipe.firebasestorage.app",
+          messagingSenderId: "914929711774",
+          appId: "1:914929711774:web:af744e3f95ef25d00a598f",
+          measurementId: "G-STH87LCT0L",
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        const API_BASE = "http://localhost:3000/api";
+        const posterEl = document.getElementById("poster");
+        const titleEl = document.getElementById("title");
+        const descEl = document.getElementById("desc");
+        const cardEl = document.getElementById("card");
+        const menuToggle = document.getElementById("menuToggle");
+        const sideMenu = document.getElementById("sideMenu");
+        const logoutBtn = document.getElementById("logoutBtn");
+        const watchlistBtn = document.getElementById("watchlistBtn");
+
+        menuToggle.addEventListener("click", () => {
+          sideMenu.classList.toggle("open");
+        });
+
+        let currentMovie = null;
+
+        async function fetchRecommendation() {
+          try {
+            const res = await fetch(
+              `${API_BASE}/movies?uid=${auth.currentUser.uid}`
+            );
+            const movie = await res.json();
+            if (!movie || !movie.id) {
+              titleEl.textContent = "No movies available";
+              descEl.textContent = "";
+              posterEl.src = "assets/placeholder.png";
+              return null;
+            }
+            posterEl.src = movie.poster_url;
+            posterEl.alt = movie.title;
+            titleEl.textContent = movie.title;
+            descEl.textContent = `${movie.genre} • ${Number(
+              movie.rating
+            ).toFixed(1)}`;
+            cardEl.style.transform = "translate(0,0)";
+            return movie;
+          } catch (err) {
+            console.error("Error fetching recommendation:", err);
+            return null;
+          }
+        }
+
+        async function doSwipe(action) {
+          if (!currentMovie) return;
+          try {
+            await fetch(`${API_BASE}/swipe`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                uid: auth.currentUser.uid,
+                movieId: currentMovie.id,
+                action,
+              }),
+            });
+          } catch (err) {
+            console.error("Error sending swipe:", err);
+          }
+          currentMovie = await fetchRecommendation();
+        }
+
+        auth.onAuthStateChanged(async (user) => {
+          if (!user) {
+            window.location = window.location.origin + "/frontend/index.html";
+            return;
+          }
+          currentMovie = await fetchRecommendation();
+
+          document.getElementById("dislike").onclick = () => doSwipe("dislike");
+          document.getElementById("like").onclick = () => doSwipe("like");
+          document.getElementById("watchlist").onclick = () =>
+            doSwipe("watchlist");
+
+          let startX, startY;
+          cardEl.addEventListener("touchstart", (e) => {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+          });
+          cardEl.addEventListener("touchmove", (e) => {
+            const dx = e.touches[0].clientX - startX;
+            const dy = e.touches[0].clientY - startY;
+            cardEl.style.transform = `translate(${dx}px, ${dy}px)`;
+          });
+          cardEl.addEventListener("touchend", (e) => {
+            const dx = e.changedTouches[0].clientX - startX;
+            const dy = e.changedTouches[0].clientY - startY;
+            handleSwipeEnd(dx, dy);
+          });
+
+          function handleSwipeEnd(dx, dy) {
+            const threshold = 100;
+            if (dx > threshold) doSwipe("like");
+            else if (dx < -threshold) doSwipe("dislike");
+            else if (dy < -threshold) doSwipe("watchlist");
+            else cardEl.style.transform = "translate(0,0)";
+          }
+
+          logoutBtn.onclick = async () => {
+            await auth.signOut();
+            window.location = window.location.origin + "/frontend/index.html";
+          };
+          watchlistBtn.onclick = () => {
+            window.location =
+              window.location.origin + "/frontend/watchlist.html";
+          };
+          document.getElementById("closeMenu").onclick = () =>
+            sideMenu.classList.remove("open");
+        });
+      });
+    </script>
+  </body>
+</html>

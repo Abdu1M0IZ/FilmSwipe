@@ -1,0 +1,152 @@
+/* Card with cropped poster and info overlay */
+.card {
+  position: relative;
+  width: 100%;
+  height: 80%;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+.poster {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.logo-img 
+  {
+     width:60%; 
+     max-width: 300px; 
+     display:block; 
+     margin:0 auto 0.5rem; 
+     padding-top: 0%; 
+     padding-bottom: 0%;
+  }
+
+.info-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 0.75rem;
+  color: #fff;
+}
+.info-overlay h3 {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+.info-overlay p {
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 100;
+}
+
+.actions {
+  display: flex;             
+  flex-direction: row;        
+  justify-content: space-around;
+  align-items: center;        
+  width: 100%;          
+  flex-wrap: nowrap;       
+}
+
+.action-btn {
+  flex: 0 0 auto;    
+  width: 4rem;
+  height: 4rem;
+  margin: 0 0.5rem;         
+  border: none;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn img 
+{
+  width: 2.6rem;
+  height: 2.6rem;
+}
+
+#like {
+  box-shadow: 0 2px 5px green;
+}
+
+#dislike {
+  box-shadow: 0 2px 5px palevioletred;
+}
+
+#watchlist {
+  box-shadow: 0 2px 5px orange;
+}
+
+/* Menu Icon */
+.menu-icon {
+  position: absolute;
+  top: 1.5rem;
+  left: 1.2rem;
+  width: 2rem;
+  height: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+  align-items: center;
+  gap: 1px;
+  padding: 1px;
+  background: #fff;
+  box-shadow: 2px 0 5px #fff
+}
+.menu-icon span {
+  display: block;
+  width: 1.2rem;
+  height: 0.2rem;
+  background: black;
+}
+
+/* Side Menu */
+.side-menu {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 180px;
+  height: 100%;
+  background: rgb(233, 233, 233);
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+  z-index: 11;
+  padding: 2rem 1rem;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.3);
+}
+.side-menu.open { transform: translateX(0); }
+.side-menu button {
+  display: block;
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  border: none;
+  background: rgb(233, 233, 233);
+  border-radius: 4px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 1rem;
+  color: black;
+  text-align: left;
+  cursor: pointer;
+}
+
+#watchlistBtn {
+  margin-bottom: 0px;
+}
+#logoutBtn {
+  color: #FF4500;
+}
+#closeMenu {
+  font-size: larger;
+  font-weight: 800;
+  border-radius: 50%;
+}
